@@ -14,7 +14,7 @@ Thumbs.db
 *.swp
 *.swo
 app/langgraph_api/
-app/doclinginputs.ipynb
+app/doclingtuts.ipynb
 app/draft.txt
 app/langgraph.json
 app/rag_eval_dataset.csv
