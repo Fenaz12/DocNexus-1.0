@@ -1,0 +1,96 @@
+services:
+  api:
+    build:
+      context: ./app
+    ports:
+      - "8000:8000"
+    env_file:
+      - ".env"
+    depends_on:
+      - postgres
+      - redis
+      - milvus
+    volumes:
+      - ./app:/app
+    restart: unless-stopped
+
+  celery-worker:
+    build: 
+      context: ./app
+    command : celery -A app.core.celery_app worker --loglevel=info --pool=solo
+    env_file:
+      - ".env"
+    depends_on:
+      - redis
+      - postgres
+      - milvus
+    volumes:
+      - ./app:/app
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./frontend
+    ports:
+      - "5173: 5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - api
+    restart: unless-stopped
+  
+  postgres:
+    image: postgres:16
+    env_file:
+      - ".env"
+    ports:
+      - "5432: 5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379: 6379"
+    restart: unless-stopped
+  
+  milvus:
+    image: milvusdb/milvus:latest
+    command: milvus run standalone
+    env_file: 
+      - ".env"
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    volumes:
+      - milvus-data:/var/lib/milvus
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    env_file: 
+      - ".env"
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  attu:
+    image: zilliz/attu:v2.2.8
+    ports:
+      - "8080:3000"
+    env_file: 
+      - ".env"
+    depends_on:
+      - milvus
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  milvus-data:
+
+
+

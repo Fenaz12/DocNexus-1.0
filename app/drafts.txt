@@ -1,0 +1,68 @@
+CREATE TABLE IF NOT EXISTS user_files (
+    id SERIAL PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id),
+    filename VARCHAR(255) NOT NULL,
+    file_path TEXT NOT NULL,
+    file_size BIGINT,
+    status VARCHAR(50) DEFAULT 'queued', -- queued, processing, completed, failed
+    stage VARCHAR(50) DEFAULT 'init',    -- conversion, chunking, vectorization
+    job_stats JSONB DEFAULT '{}'::jsonb,
+    chunk_count INT DEFAULT 0,
+    vector_count INT DEFAULT 0,
+    error_message TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+-- Optional: Index for faster retrieval by user
+CREATE INDEX idx_user_files_user_id ON user_files(user_id);
+
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email TEXT UNIQUE NOT NULL,
+    username TEXT NOT NULL,
+    password_hash TEXT NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS threads (
+    thread_id UUID PRIMARY KEY,
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    title TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+
+
+TODO: 
+Token count, Summarize queries
+Show thinking steps when chatting - Done
+Show images in the chat
+Add summaries of the uploaded file in metadata
+Do Late Chunking  and compare the results with baseline
+Do GraphRAG and compare the results with baseline
+
+DEPLOYMENT:
+Two modes; 1. Frontend with already uploaded pdfs and vector db. 2. Docker compose and run it in your own machine
+
+Mode1:
+    1. Use free cloud services for Milvus and Postgres
+    2. Use render to host the Frontend
+
+Mode2:
+    Use docker compose to run all the services, it will build images and run in the reviewers own processing
+    The LLMS are used in -> VLM (done), Embedding uploaded files (done), Chat (done), Grading the retreived content (done)
+    Need to change the URIs of milvus and postgres since they run in containers
+
+
+
+for evaluation i made changes in 
+nodes.py
+tools.py
+graph.py
+config.py
+
