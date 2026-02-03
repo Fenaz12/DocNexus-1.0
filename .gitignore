@@ -14,6 +14,7 @@ Thumbs.db
 *.swp
 *.swo
 app/langgraph_api/
+volumes
 app/doclingtuts.ipynb
 app/draft.txt
 app/langgraph.json
