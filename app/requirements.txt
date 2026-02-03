@@ -27,3 +27,4 @@ bcrypt==4.0.1
 redis==7.1.0
 docling[easyocr]==2.65.0
 psycopg[binary]==3.3.2
+flashrank
