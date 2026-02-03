@@ -49,8 +49,6 @@ async def generate_query_or_respond(state: RAGState, runtime: Runtime[UserContex
         response_model.bind_tools([get_retrievel_tool]).ainvoke(messages)
     )
 
-    # Note: We reset loop_step here IF the model decides NOT to use a tool (i.e. normal chat)
-    # But if it uses a tool, we keep the current loop_step.
     return {"messages": [response], "rewritten_question": ""}
 
 async def grade_documents(state: RAGState) -> Literal["generate_answer", "rewrite_question"]:
@@ -88,10 +86,8 @@ async def rewrite_question(state: RAGState):
     last_human_msg = [m for m in state["messages"] if m.type == "human"][-1]
     original_question = last_human_msg.content
     
-    # Check how many times we've looped
     loop_step = state.get("loop_step", 0)
     
-    # Dynamic Prompting based on desperation
     if loop_step == 0:
         instructions = f"Rewrite this question to be more specific and technical: {original_question}"
     elif loop_step == 1:
@@ -110,15 +106,22 @@ async def generate_answer(state: RAGState):
     """Generate an answer."""
     
     all_tool_msgs = [m for m in state["messages"] if isinstance(m, ToolMessage)]
+    context = ""
     if all_tool_msgs:
         context = all_tool_msgs[-1].content
     else:
         context = "No context available"
     
-    messages_to_send = [SystemMessage(content=ANSWER_INSTURCTION)]
+    system_prompt_content = f"""{ANSWER_INSTURCTION}
+
+    background_context:
+    {context}
+    """
+    
+    messages_to_send = [SystemMessage(content=system_prompt_content)]
     
     for msg in state["messages"]:
-        if isinstance(msg,(HumanMessage, AIMessage)):
+        if isinstance(msg,(HumanMessage, AIMessage,ToolMessage)):
             messages_to_send.append(msg)
 
     messages_to_send.append(
@@ -127,5 +130,4 @@ async def generate_answer(state: RAGState):
 
     response = await response_model.ainvoke(messages_to_send)
 
-    # NEW: Reset loop step after a successful answer so the next question starts fresh
     return {"messages": [response], "loop_step": 0}

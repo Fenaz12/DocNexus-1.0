@@ -28,7 +28,6 @@ import { Send, ChevronDown, Wrench, Sparkles } from "lucide-react"
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-
 // Example Questions Configuration
 const EXAMPLE_QUESTIONS = [
   {
@@ -47,7 +46,6 @@ const EXAMPLE_QUESTIONS = [
     icon: "📊"
   }
 ];
-
 
 export default function Chat() {
   const { threadId } = useParams();
@@ -72,17 +70,17 @@ export default function Chat() {
   // Track which thread is currently displayed
   const displayedThreadRef = useRef(threadId);
 
-
-  // Update displayed thread when URL changes
   useEffect(() => {
     displayedThreadRef.current = threadId;
-    
+  
+    if (loading) return;
+
     if (threadId && threadId !== currentThreadId) {
+      console.log("Switched threads, loading from DB...");
       setStreamingContent('');
       setThinkingSteps([]);
       setToolCalls([]);
-      setLoading(false);
-      
+            
       loadThread(threadId);
       setCurrentThreadId(threadId);
     } else if (!threadId) {
@@ -90,15 +88,7 @@ export default function Chat() {
       setMessages([]);
       setCurrentThreadId(null);
     }
-  }, [threadId]);
-
-
-  useEffect(() => {
-    if (threadId) {
-      loadThread(threadId);
-    }
-  }, [threadId]);
-
+  }, [threadId, currentThreadId, loading]); 
 
   // Auto-scroll to bottom when streaming
   useEffect(() => {
@@ -109,7 +99,6 @@ export default function Chat() {
       }
     }
   }, [messages, streamingContent, thinkingSteps, toolCalls]);
-
 
   // Transform DB Messages to UI Format
   const transformMessagesForUI = (rawMessages) => {
@@ -174,7 +163,6 @@ export default function Chat() {
     return uiMessages;
   };
 
-
   const loadThread = async (id) => {
     try {
       const { data } = await chatAPI.getThread(id);
@@ -183,9 +171,10 @@ export default function Chat() {
       setCurrentThreadId(id);
     } catch (error) {
       console.error('Error loading thread:', error);
+      // FIX: If error occurs (likely 401 Unauthorized), force redirect to login
+      navigate('/login', { replace: true });
     }
   };
-
 
   // Handle Example Question Click
   const handleExampleClick = (question) => {
@@ -196,7 +185,6 @@ export default function Chat() {
       sendMessageWithText(question);
     }, 50);
   };
-
 
   // Send message with custom text (for example questions)
   const sendMessageWithText = async (text) => {
@@ -327,15 +315,18 @@ export default function Chat() {
           if (displayedThreadRef.current === messageThreadId || displayedThreadRef.current === null) {
             console.error('Stream error:', err);
             setLoading(false);
+            // FIX: Handle error during stream setup
+            if (err?.response?.status === 401) navigate('/login');
           }
         }
       );
     } catch (error) {
       console.error('Send message error:', error);
       setLoading(false);
+      // FIX: Handle error during initialization
+      navigate('/login');
     }
   };
-
 
   // Send message from input field
   const sendMessage = async () => {
@@ -343,14 +334,12 @@ export default function Chat() {
     await sendMessageWithText(input);
   };
 
-
   const startNewChat = () => {
     const newThreadId = crypto.randomUUID();
     setCurrentThreadId(newThreadId);
     setMessages([]);
     navigate(`/chat/${newThreadId}`);
   };
-
 
   // Message Bubble Component
   const MessageBubble = ({ msg, isLast }) => (
@@ -379,7 +368,7 @@ export default function Chat() {
         {msg.toolCalls && msg.toolCalls.length > 0 && (
           <Collapsible>
             <CollapsibleTrigger className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground">
-              <Wrench className="h-3 w-3" />
+              <Wrench className="h-3 w-3 text-primary" />
               <span>Used {msg.toolCalls.length} tool{msg.toolCalls.length > 1 ? 's' : ''}</span>
               <ChevronDown className="h-3 w-3" />
             </CollapsibleTrigger>
@@ -412,7 +401,8 @@ export default function Chat() {
             className={`rounded-lg px-4 py-3 ${
               msg.role === 'user'
                 ? 'bg-primary text-primary-foreground'
-                : 'bg-card border shadow-sm'
+                : 'bg-card text-card-foreground border shadow-sm'
+
             }`}
           >
             {msg.role === 'user' ? (
@@ -430,20 +420,19 @@ export default function Chat() {
     </div>
   );
 
-
   return (
     <div>
       <SidebarProvider>
         <SidebarLeft onNewChat={startNewChat} />
         <SidebarInset>
-          <header className="bg-background sticky top-0 flex h-14 shrink-0 items-center gap-2 border-b z-10">
+          <header className="bg-background sticky top-0 flex h-14 shrink-0 items-center gap-2 border-b z-10 border-sidebar-border">
             <div className="flex flex-1 items-center gap-2 px-3">
               <SidebarTrigger />
-              <Separator orientation="vertical" className="mr-2 h-4" />
+              <Separator orientation="vertical" className="mr-2 h-4 bg-border" />
               <Breadcrumb>
                 <BreadcrumbList>
                   <BreadcrumbItem>
-                    <BreadcrumbPage className="line-clamp-1">
+                    <BreadcrumbPage className="line-clamp-1 ">
                       {messages.length > 0 ? messages[0].content.substring(0, 50) + '...' : 'New Chat'}
                     </BreadcrumbPage>
                   </BreadcrumbItem>
@@ -452,16 +441,15 @@ export default function Chat() {
             </div>
           </header>
 
-          <div className="flex flex-1 flex-col h-[calc(100vh-3.5rem)]">
+          <div className="flex flex-1 flex-col h-[calc(100vh-3.5rem)] ">
             <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
               <div className="mx-auto max-w-3xl space-y-6">
                 {messages.length === 0 && !streamingContent && thinkingSteps.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-[calc(100vh-12rem)] text-muted-foreground">
-                    <Sparkles className="h-12 w-12 mb-4 text-primary/20" />
+                    <Sparkles className="h-12 w-12 mb-4 text-primary/90" />
                     <p className="text-lg font-medium mb-2">How can I help you today?</p>
                     <p className="text-sm text-muted-foreground/70 mb-8">Ask about any questions related to the uploaded documents</p>
                     
-                    {/* Example Questions - ChatGPT Style */}
                     <div className="grid grid-cols-1 gap-2 max-w-2xl w-full px-4">
                       {EXAMPLE_QUESTIONS.map((example) => (
                         <button
@@ -546,7 +534,7 @@ export default function Chat() {
               </div>
             </ScrollArea>
 
-            <div className="border-t p-4 bg-background">
+            <div className="border-t p-4 bg-background border-sidebar-border " >
               <div className="mx-auto max-w-3xl">
                 <div className="flex gap-2">
                   <Input

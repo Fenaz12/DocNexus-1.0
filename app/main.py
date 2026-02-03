@@ -8,20 +8,20 @@ from psycopg_pool import AsyncConnectionPool
 from app.core.config import settings
 from app.api.router import api_router
 from app.services.vector_store import vector_store_service 
-import os
+from app.db.init_db import init_db
 
-import os
-from pathlib import Path
-from dotenv import load_dotenv
+# 1. Initialize Vector Store 
+# 2. Initialize Postgres Pool
+# 3. Check for tables in postgres
+# Initialize the app with the lifespan logic
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 
-    # 1. Initialize Vector Store (Milvus)
     print("🔌 Checking Vector Store connection...")
     vector_store_service.ensure_vectoredb_exists()
 
-    # 2. Initialize Postgres Pool
     print("🏊 Creating Database Pool...")
     app.state.pool = AsyncConnectionPool(
         conninfo=settings.DB_URI,
@@ -29,19 +29,25 @@ async def lifespan(app: FastAPI):
         kwargs={"autocommit": True},
         open=False
     )
-    await app.state.pool.open()
-    print("✅ All systems ready!")
     
+    await app.state.pool.open()
+    try:
+        print("🛠️  Checking database schema...")
+        await init_db(app.state.pool)
+    except Exception as e:
+        print(f"❌ Failed to initialize database tables: {e}")
+
+    print("✅ All systems ready!")
     yield 
     
     print("🛑 Shutting down...")
     await app.state.pool.close()
     print("👋 Goodbye!")
 
-# Initialize the app with the lifespan logic
+
 app = FastAPI(lifespan=lifespan)
 
-# Add CORS Middleware (Security)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], 
@@ -50,7 +56,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register your routes
 app.include_router(api_router)
 
 @app.get("/")

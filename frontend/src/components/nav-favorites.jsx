@@ -36,7 +36,7 @@ export function NavFavorites({ favorites, navigate }) {
   };
 
   return (
-    <SidebarGroup className="group-data-[collapsible=icon]:hidden">
+    <SidebarGroup className="group-data-[collapsible=icon]:hidden ">
       <SidebarGroupLabel>Recent Chats</SidebarGroupLabel>
       <SidebarMenu>
         {favorites.length === 0 ? (
@@ -46,13 +46,13 @@ export function NavFavorites({ favorites, navigate }) {
         ) : (
           favorites.map((item) => (
             <SidebarMenuItem key={item.id || item.name}>
-              <SidebarMenuButton asChild>
+              <SidebarMenuButton className="p-2 h-11" asChild>
                 <a 
                   href={item.url} 
                   title={item.name}
                   onClick={(e) => handleThreadClick(e, item.url)}
                 >
-                  {item.icon && <item.icon className="text-muted-foreground h-4 w-4" />}
+                  {item.icon && <item.icon className="text-muted-foreground h-5 w-4" />}
                   <div className="flex flex-col flex-1 overflow-hidden">
                     <span className="truncate">{item.name}</span>
                     {item.date && (
@@ -63,38 +63,7 @@ export function NavFavorites({ favorites, navigate }) {
                   </div>
                 </a>
               </SidebarMenuButton>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <SidebarMenuAction showOnHover>
-                    <MoreHorizontal />
-                    <span className="sr-only">More</span>
-                  </SidebarMenuAction>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  className="w-56 rounded-lg"
-                  side={isMobile ? "bottom" : "right"}
-                  align={isMobile ? "end" : "start"}
-                >
-                  <DropdownMenuItem>
-                    <StarOff className="text-muted-foreground" />
-                    <span>Remove from Favorites</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <Link className="text-muted-foreground" />
-                    <span>Copy Link</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <ArrowUpRight className="text-muted-foreground" />
-                    <span>Open in New Tab</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-destructive">
-                    <Trash2 className="text-muted-foreground" />
-                    <span>Delete</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+
             </SidebarMenuItem>
           ))
         )}

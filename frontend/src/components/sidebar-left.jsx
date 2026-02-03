@@ -1,8 +1,8 @@
 import * as React from "react"
 import {
   MessageSquareText,
-  SquarePen ,
-  Bot,
+  SquarePen,
+  NotebookPen, 
 } from "lucide-react"
 
 import { useState, useEffect } from 'react';
@@ -24,19 +24,19 @@ import {
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 
-// App Title Component (replaces TeamSwitcher)
+// App Title Component
 function AppTitle() {
   return (
-    <SidebarMenu>
+    <SidebarMenu className="p-4">
       <SidebarMenuItem>
         <SidebarMenuButton
-          size="lg"
+          size="xl"
           className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
         >
           <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-            <Bot className="size-4" />
+            <NotebookPen className="size-4" />
           </div>
-          <div className="grid flex-1 text-left text-sm leading-tight">
+          <div className="grid flex-1 text-left text-lg leading-tight">
             <span className="truncate font-semibold">DocNexus</span>
             <span className="truncate text-xs">Advanced RAG</span>
           </div>
@@ -67,7 +67,7 @@ export function SidebarLeft({ onNewChat, ...props }) {
     loadHistory();
   }, []);
 
-  // NEW: Listen for new thread events from Chat component
+  // Listen for new thread events from Chat component
   useEffect(() => {
     const handleNewThread = (event) => {
       const newThread = event.detail;
@@ -126,12 +126,13 @@ export function SidebarLeft({ onNewChat, ...props }) {
     <Sidebar className="border-r-0" {...props}>
       <SidebarHeader>
         <AppTitle />
-        <NavMain items={navMainItems} />
+        {/* STYLING UPDATE: Added padding p-4 from Demo */}
+        <NavMain className="p-4" items={navMainItems} />
       </SidebarHeader>
       <SidebarContent>
         <NavFavorites favorites={favoritesFromThreads} navigate={navigate} />
       </SidebarContent>
-      <SidebarFooter className="p-4 border-t">
+      <SidebarFooter className="p-4 border-t border-sidebar-border">
         <Button onClick={logout} variant="outline" className="w-full">
           Logout
         </Button>

@@ -239,7 +239,7 @@ function SidebarTrigger({
         toggleSidebar()
       }}
       {...props}>
-      <PanelLeftIcon />
+      <PanelLeftIcon className="text-foreground" />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   );
@@ -309,7 +309,7 @@ function SidebarHeader({
     <div
       data-slot="sidebar-header"
       data-sidebar="header"
-      className={cn("flex flex-col gap-2 p-2", className)}
+      className={cn("flex flex-col gap-0 p-0", className)}
       {...props} />
   );
 }

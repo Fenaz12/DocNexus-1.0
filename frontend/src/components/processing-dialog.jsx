@@ -27,9 +27,6 @@ import { Card, CardContent, CardHeader, CardSmall } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
-
-// If unused for now you can remove these imports
-// import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { fileAPI } from "../services/api"
 
 const PIPELINE_TABS = [
@@ -40,7 +37,6 @@ const PIPELINE_TABS = [
   { id: "vectorization", label: "Vectorization & Storage", icon: Database },
   { id: "view_chunks", label: "View Chunks", icon: FileText },
 ]
-
 
 function ViewChunksSection({
   chunks,
@@ -57,18 +53,16 @@ function ViewChunksSection({
     <div className="h-full min-h-0 w-full flex">
       {/* Left Pane */}
       <div className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden">
-        <div className="p-4 border-b space-y-4 shrink-0">
+        <div className="p-4 space-y-4 shrink-0">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold">Content Chunks</h3>
+            <h3 className="font-semibold text-foreground">Content Chunks</h3>
             <span className="text-sm text-muted-foreground">
               {filteredChunks.length} of {chunks.length} chunks
             </span>
           </div>
 
           <div className="flex items-center gap-2">
-
             <Separator orientation="vertical" className="h-6" />
-
             <div className="relative flex-1 min-w-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -106,7 +100,7 @@ function ViewChunksSection({
                       <div className="flex items-center gap-2">
                         <Badge
                           variant="secondary"
-                          className="text-xs bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400"
+                          className="text-xs"
                         >
                           {chunk.type || "text"}
                         </Badge>
@@ -134,7 +128,7 @@ function ViewChunksSection({
       {/* Right Pane */}
       <div className="w-[450px] shrink-0 min-h-0 flex flex-col overflow-hidden bg-muted/20">
         <div className="p-4 border-b shrink-0">
-          <h3 className="font-semibold">Detail Inspector</h3>
+          <h3 className="font-semibold text-foreground">Detail Inspector</h3>
         </div>
 
         <ScrollArea className="h-0 flex-1">
@@ -152,35 +146,33 @@ function ViewChunksSection({
           ) : (
             <div className="p-4 space-y-4">
               <div>
-
-                <h4 className="font-semibold mb-2">Content</h4>
+                <h4 className="font-semibold mb-2 text-foreground">Content</h4>
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                  {filteredChunks[selectedChunk]?.content ||
-                    "No content available"}
+                  {filteredChunks[selectedChunk]?.content || "No content available"}
                 </p>
               </div>
 
               <Separator />
 
               <div className="space-y-3">
-                <h4 className="font-semibold text-sm">Metadata</h4>
+                <h4 className="font-semibold text-sm text-foreground">Metadata</h4>
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Page:</span>
-                    <span className="font-medium">
+                    <span className="font-medium text-foreground">
                       {filteredChunks[selectedChunk]?.page ?? " "}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Characters:</span>
-                    <span className="font-medium">
+                    <span className="font-medium text-foreground">
                       {filteredChunks[selectedChunk]?.chars ?? "0"}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Source:</span>
                     <span
-                      className="font-medium truncate ml-2"
+                      className="font-medium truncate ml-2 text-foreground"
                       title={filteredChunks[selectedChunk]?.source}
                     >
                       {filteredChunks[selectedChunk]?.source ||
@@ -205,7 +197,7 @@ export function ProcessingDialog({ open, onOpenChange, files }) {
   const [loading, setLoading] = useState(false)
   const [loadingChunk, setLoadingChunk] = useState(false)
   
-  // Chunks state (restored)
+  // Chunks state
   const [chunks, setChunks] = useState([])
   const [selectedChunk, setSelectedChunk] = useState(null)
   const [chunkFilter, setChunkFilter] = useState("all")
@@ -233,12 +225,9 @@ export function ProcessingDialog({ open, onOpenChange, files }) {
           setTaskStatus(response.data)
           
           if (response.data.state === 'PROGRESS') {
-            const currentStage = response.data.current_stage
-            
+             // Optional: handle progress updates
           } else if (response.data.state === 'SUCCESS') {
             clearInterval(pollInterval)
-            
-            // Fetch final metadata from database
             fetchFileMetadata()
           } else if (response.data.state === 'FAILURE') {
             clearInterval(pollInterval)
@@ -262,42 +251,41 @@ export function ProcessingDialog({ open, onOpenChange, files }) {
   }, [open, files])
 
   // Load placeholder chunks when view_chunks tab is accessed
-useEffect(() => {
-  if (activeTab === 'view_chunks' && chunks.length === 0 && files?.id) {
-    fetchChunks()
-  }
-}, [activeTab])
-
-const fetchChunks = async () => {
-  if (!files?.id) {
-    console.warn('No file ID available')
-    return
-  }
-  
-  setLoadingChunk(true)
-  try {
-    const response = await fileAPI.getFileChunks(files.id)
-    setChunks(response.data.chunks)
-    
-    if (response.data.chunks.length === 0) {
-      toast({
-        title: "No chunks found",
-        description: "This file has no processed chunks yet",
-        variant: "default",
-      })
+  useEffect(() => {
+    if (activeTab === 'view_chunks' && chunks.length === 0 && files?.id) {
+      fetchChunks()
     }
-  } catch (error) {
-    console.error('Error fetching chunks:', error)
-    toast({
-      title: "Failed to load chunks",
-      description: error.response?.data?.detail || "Could not retrieve document chunks",
-      variant: "destructive",
-    })
+  }, [activeTab])
+
+  const fetchChunks = async () => {
+    if (!files?.id) {
+      console.warn('No file ID available')
+      return
+    }
     
-  } finally{
-    setLoadingChunk(false)
+    setLoadingChunk(true)
+    try {
+      const response = await fileAPI.getFileChunks(files.id)
+      setChunks(response.data.chunks)
+      
+      if (response.data.chunks.length === 0) {
+        toast({
+          title: "No chunks found",
+          description: "This file has no processed chunks yet",
+          variant: "default",
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching chunks:', error)
+      toast({
+        title: "Failed to load chunks",
+        description: error.response?.data?.detail || "Could not retrieve document chunks",
+        variant: "destructive",
+      })
+    } finally{
+      setLoadingChunk(false)
+    }
   }
-}
 
   const fetchFileMetadata = async () => {
     if (!files?.name) return
@@ -320,7 +308,7 @@ const fetchChunks = async () => {
 
   const getStageData = () => {
     if (isActiveTask && taskStatus?.files_stats) {
-      // ✅ Extract THIS file's stats from task metadata
+      // Extract THIS file's stats from task metadata
       return taskStatus.files_stats[files.name] || {}
     } else if (fileMetadata?.job_stats) {
       // For completed files, use DB data
@@ -331,7 +319,6 @@ const fetchChunks = async () => {
 
   const getStageStatus = (stageId) => {
     if (isCompleted) return 'completed'
-    
     if (!taskStatus) return 'pending'
     
     const stageOrder = ['upload', 'queued', 'partitioning', 'chunking', 'vectorization']
@@ -377,18 +364,18 @@ const fetchChunks = async () => {
         return (
           <div className="p-15 min-h-[70vh]">
             <div className="max-w-2xl mx-auto text-center space-y-6">
-              <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-green-100 dark:bg-green-900/20">
-                <CheckCircle2 className="h-12 w-12 text-green-600 dark:text-green-400" />
+              <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-primary/10">
+                <CheckCircle2 className="h-12 w-12 text-primary" />
               </div>
               <div>
-                <h3 className="text-2xl font-semibold mb-2">Upload to S3</h3>
+                <h3 className="text-2xl font-semibold mb-2 text-foreground">Upload to S3</h3>
                 <p className="text-muted-foreground">
                   File uploaded to secure cloud storage
                 </p>
               </div>
-              <Card className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900">
+              <Card className="bg-primary/5 border-primary/20">
                 <CardContent className="pt-1">
-                  <div className="flex items-center justify-center gap-2 text-green-700 dark:text-green-400">
+                  <div className="flex items-center justify-center gap-2 text-primary">
                     <CheckCircle2 className="h-5 w-5" />
                     <span className="font-medium">Step completed successfully</span>
                   </div>
@@ -402,21 +389,21 @@ const fetchChunks = async () => {
         return (
           <div className="p-12 min-h-[70vh]">
             <div className="max-w-2xl mx-auto text-center space-y-6">
-              <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-green-100 dark:bg-green-900/20">
+              <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-primary/10">
                 {getStageStatus('queued') === 'processing' ? (
-                  <Loader2 className="h-12 w-12 text-green-600 dark:text-green-400 animate-spin" />
+                  <Loader2 className="h-12 w-12 text-primary animate-spin" />
                 ) : (
-                  <CheckCircle2 className="h-12 w-12 text-green-600 dark:text-green-400" />
+                  <CheckCircle2 className="h-12 w-12 text-primary" />
                 )}
               </div>
               <div>
-                <h3 className="text-2xl font-semibold mb-2">Queued</h3>
+                <h3 className="text-2xl font-semibold mb-2 text-foreground">Queued</h3>
                 <p className="text-muted-foreground">File queued for processing</p>
               </div>
               {getStageStatus('queued') === 'completed' && (
-                <Card className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900">
+                <Card className="bg-primary/5 border-primary/20">
                   <CardContent className="pt-1">
-                    <div className="flex items-center justify-center gap-2 text-green-700 dark:text-green-400">
+                    <div className="flex items-center justify-center gap-2 text-primary">
                       <CheckCircle2 className="h-5 w-5" />
                       <span className="font-medium">Step completed successfully</span>
                     </div>
@@ -432,7 +419,7 @@ const fetchChunks = async () => {
           <div className="p-12 min-h-[70vh]">
             <div className="max-w-2xl mx-auto space-y-6">
               <div className="text-center space-y-2">
-                <h3 className="text-2xl font-semibold">Partitioning</h3>
+                <h3 className="text-2xl font-semibold text-foreground">Partitioning</h3>
                 <p className="text-muted-foreground">
                   Processing and extracting text, images, and tables
                 </p>
@@ -443,8 +430,8 @@ const fetchChunks = async () => {
                 <Card className="border-2 max-h-[50vh]">
                   <CardHeader className="">
                     <div className="flex items-center gap-2">
-                      <Layers className="h-5 w-5 text-purple-600" />
-                      <h4 className="font-semibold">Elements Discovered</h4>
+                      <Layers className="h-5 w-5 text-primary" />
+                      <h4 className="font-semibold text-foreground">Elements Discovered</h4>
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -453,7 +440,7 @@ const fetchChunks = async () => {
                         <CardContent className="p-4 " >
                           <div className="flex items-center justify-between">
                             <span className="text-sm text-muted-foreground">Text sections</span>
-                            <span className="text-2xl font-bold">
+                            <span className="text-2xl font-bold text-foreground">
                               {stagesData.partitioning.text_sections || 0}
                             </span>
                           </div>
@@ -464,7 +451,7 @@ const fetchChunks = async () => {
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between">
                             <span className="text-sm text-muted-foreground">Tables</span>
-                            <span className="text-2xl font-bold">
+                            <span className="text-2xl font-bold text-foreground">
                               {stagesData.partitioning.tables || 0}
                             </span>
                           </div>
@@ -475,17 +462,18 @@ const fetchChunks = async () => {
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between">
                             <span className="text-sm text-muted-foreground">Images</span>
-                            <span className="text-2xl font-bold">
+                            <span className="text-2xl font-bold text-foreground">
                               {stagesData.partitioning.images_total || 0}
                             </span>
                           </div>
                         </CardContent>
                       </CardSmall>
+
                       <CardSmall className="bg-muted/50 max-h-[70px]">
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">Images With Description</span>
-                            <span className="text-2xl font-bold">
+                            <span className="text-sm text-muted-foreground">Images With Desc</span>
+                            <span className="text-2xl font-bold text-foreground">
                               {stagesData.partitioning.images_with_desc || 0}
                             </span>
                           </div>
@@ -496,19 +484,18 @@ const fetchChunks = async () => {
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between">
                             <span className="text-sm text-muted-foreground">Other</span>
-                            <span className="text-2xl font-bold">
+                            <span className="text-2xl font-bold text-foreground">
                               {stagesData.partitioning.other || 0}
                             </span>
                           </div>
                         </CardContent>
                       </CardSmall>
 
-
                       <CardSmall className="bg-muted/50 max-h-[70px]">
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between">
                             <span className="text-sm text-muted-foreground">Page Count</span>
-                            <span className="text-2xl font-bold">
+                            <span className="text-2xl font-bold text-foreground">
                               {stagesData.partitioning.page_count || 0}
                             </span>
                           </div>
@@ -526,9 +513,9 @@ const fetchChunks = async () => {
               )}
 
               {getStageStatus('partitioning') === 'completed' && (
-                <Card className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900">
+                <Card className="bg-primary/5 border-primary/20">
                   <CardContent className="pt-2">
-                    <div className="flex items-center justify-center gap-2 text-green-700 dark:text-green-400">
+                    <div className="flex items-center justify-center gap-2 text-primary">
                       <CheckCircle2 className="h-5 w-5" />
                       <span className="font-medium">Step completed successfully</span>
                     </div>
@@ -539,13 +526,12 @@ const fetchChunks = async () => {
           </div>
         )
 
-
       case "chunking":
         return (
           <div className="p-12 min-h-[70vh]">
             <div className="max-w-2xl mx-auto space-y-6">
               <div className="text-center space-y-2">
-                <h3 className="text-2xl font-semibold">Creating Semantic Chunks</h3>
+                <h3 className="text-2xl font-semibold text-foreground">Creating Semantic Chunks</h3>
               </div>
 
               {/* Only show if chunking data exists */}
@@ -553,8 +539,8 @@ const fetchChunks = async () => {
                 <Card className="border-2">
                   <CardHeader className="pb-4">
                     <div className="flex items-center gap-2">
-                      <SplitSquareVertical className="h-5 w-5 text-green-600" />
-                      <h4 className="font-semibold text-green-700 dark:text-green-400">
+                      <SplitSquareVertical className="h-5 w-5 text-primary" />
+                      <h4 className="font-semibold text-primary">
                         Chunking Results
                       </h4>
                     </div>
@@ -564,7 +550,7 @@ const fetchChunks = async () => {
                       <CardContent className="p-6">
                         <div className="flex items-center justify-center gap-8">
                           <div className="text-center">
-                            <div className="text-4xl font-bold">
+                            <div className="text-4xl font-bold text-foreground">
                               {stagesData.chunking.atomic_elements || '0'}
                             </div>
                             <div className="text-sm text-muted-foreground mt-1">
@@ -573,7 +559,7 @@ const fetchChunks = async () => {
                           </div>
                           <div className="text-2xl text-muted-foreground">→</div>
                           <div className="text-center">
-                            <div className="text-4xl font-bold text-green-600 dark:text-green-400">
+                            <div className="text-4xl font-bold text-primary">
                               {stagesData.chunking.chunks_created || 0}
                             </div>
                             <div className="text-sm text-muted-foreground mt-1">
@@ -586,7 +572,7 @@ const fetchChunks = async () => {
 
                     <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
                       <span className="text-sm font-medium">Average chunk size</span>
-                      <span className="text-sm font-bold">
+                      <span className="text-sm font-bold text-foreground">
                         {stagesData.chunking.avg_chunk_size || '0'} characters
                       </span>
                     </div>
@@ -601,9 +587,9 @@ const fetchChunks = async () => {
               )}
 
               {getStageStatus('chunking') === 'completed' && (
-                <Card className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900">
+                <Card className="bg-primary/5 border-primary/20">
                   <CardContent className="pt-2">
-                    <div className="flex items-center justify-center gap-2 text-green-700 dark:text-green-400">
+                    <div className="flex items-center justify-center gap-2 text-primary">
                       <CheckCircle2 className="h-5 w-5" />
                       <span className="font-medium">Step completed successfully</span>
                     </div>
@@ -614,16 +600,15 @@ const fetchChunks = async () => {
           </div>
         )
 
-
       case "vectorization":
         return (
           <div className="p-12 min-h-[70vh]">
             <div className="max-w-2xl mx-auto text-center space-y-6">
-              <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-green-100 dark:bg-green-900/20">
-                <CheckCircle2 className="h-12 w-12 text-green-600 dark:text-green-400" />
+              <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-primary/10">
+                <CheckCircle2 className="h-12 w-12 text-primary" />
               </div>
               <div>
-                <h3 className="text-2xl font-semibold mb-2">
+                <h3 className="text-2xl font-semibold mb-2 text-foreground">
                   Vectorization & Storage
                 </h3>
                 <p className="text-muted-foreground">
@@ -632,16 +617,15 @@ const fetchChunks = async () => {
               </div>
               
               {getStageStatus('vectorization') === 'completed' && (
-                <Card className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900">
+                <Card className="bg-primary/5 border-primary/20">
                   <CardContent className="pt-2">
-                    <div className="flex items-center justify-center gap-2 text-green-700 dark:text-green-400">
+                    <div className="flex items-center justify-center gap-2 text-primary">
                       <CheckCircle2 className="h-5 w-5" />
                       <span className="font-medium">Step completed successfully</span>
                     </div>
                   </CardContent>
                 </Card>
               )}
-
             </div>
           </div>
         )
@@ -672,11 +656,11 @@ const fetchChunks = async () => {
       <DialogContent className="max-w-[90vw] h-[85vh] max-h-[95vh] overflow-hidden !p-0 !gap-0 !flex !flex-col">
         <DialogHeader className="px-6 py-4 border-b shrink-0">
           <div className="flex items-center gap-3">
-            <div className="bg-primary/10 p-2 rounded-lg">
-              <FileText className="h-5 w-5" />
+             <div className="bg-primary/10 p-2 rounded-lg">
+                <FileText className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <DialogTitle className="text-lg">
+              <DialogTitle className="text-lg text-foreground">
                 {files?.name || "Processing Pipeline"}
               </DialogTitle>
             </div>
@@ -684,7 +668,7 @@ const fetchChunks = async () => {
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-          {/* Tabs Navigation - REMOVED FILTER */}
+          {/* Tabs Navigation */}
           <div className="border-b px-4 bg-muted/30 shrink-0">
             <div className="flex items-center gap-1 overflow-x-auto">
               {PIPELINE_TABS.map((tab) => {
@@ -703,7 +687,7 @@ const fetchChunks = async () => {
                       }
                       ${
                         status === "completed"
-                          ? "text-green-600 dark:text-green-400"
+                          ? "text-primary"
                           : ""
                       }
                     `}

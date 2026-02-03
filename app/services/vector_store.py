@@ -7,6 +7,9 @@ from langchain_community.document_compressors import FlashrankRerank
 from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from app.core.config import settings
+from flashrank import Ranker 
+
+ranker = Ranker(model_name="ms-marco-MiniLM-L-12-v2")
 
 class VectorStoreService:
     def __init__(self):

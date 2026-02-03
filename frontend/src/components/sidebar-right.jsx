@@ -1,6 +1,6 @@
 import * as React from "react"
 import { useState, useEffect } from "react"
-import { Upload, Settings, FileText, X, Loader2, CheckCircle2, Eye, Trash2, Info } from "lucide-react"
+import { Upload, Settings, FileText, X, Loader2, CheckCircle2, Eye, Trash2, Info  } from "lucide-react"
 import { NavUser } from "@/components/nav-user"
 import {
   Sidebar,
@@ -10,14 +10,18 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
-  SidebarSeparator,
+  SidebarSeparator
 } from "@/components/ui/sidebar"
+
+import { Alert, AlertDescription } from "@/components/ui/alert"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Progress } from "@/components/ui/progress"
+
 import {
   Select,
   SelectContent,
@@ -26,11 +30,9 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { fileAPI } from "../services/api"
 import { useToast } from "@/hooks/use-toast"
 import { ProcessingDialog } from "@/components/processing-dialog"
-
 
 const data = {
   user: {
@@ -39,7 +41,6 @@ const data = {
     avatar: "/avatars/shadcn.jpg",
   },
 }
-
 
 export function SidebarRight({ ...props }) {
   const [activeTab, setActiveTab] = useState("documents")
@@ -59,12 +60,10 @@ export function SidebarRight({ ...props }) {
   
   const { toast } = useToast()
 
-
   // Fetch existing files on mount
   useEffect(() => {
     fetchUserFiles()
   }, [])
-
 
   const fetchUserFiles = async () => {
     setLoading(true)
@@ -93,7 +92,6 @@ export function SidebarRight({ ...props }) {
     }
   }
 
-
   const handleFileSelection = (files) => {
     if (!files || files.length === 0) return
     
@@ -108,17 +106,14 @@ export function SidebarRight({ ...props }) {
     setStagedFiles(prev => [...prev, ...newFiles])
   }
 
-
   const handleDrop = (e) => {
     e.preventDefault()
     handleFileSelection(e.dataTransfer.files)
   }
 
-
   const handleFileInput = (e) => {
     handleFileSelection(e.target.files)
   }
-
 
   const removeStagedFile = (fileId) => {
     setStagedFiles(prev => prev.filter(f => f.id !== fileId))
@@ -128,7 +123,6 @@ export function SidebarRight({ ...props }) {
       return newProgress
     })
   }
-
 
   const handleSubmitFiles = async () => {
     if (stagedFiles.length === 0) return
@@ -178,12 +172,18 @@ export function SidebarRight({ ...props }) {
     }
   }
 
-
   const handleViewFile = (file) => {
     setSelectedFiles(file)
     setDialogOpen(true)
   }
 
+  const handleApplySettings = () => {
+    toast({
+      title: "Settings Saved",
+      description: `Reranking: ${enableReranking ? 'On' : 'Off'}, Mode: ${agentMode}`,
+    })
+    // Add logic here to save settings to context/API if needed
+  }
 
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes'
@@ -193,7 +193,6 @@ export function SidebarRight({ ...props }) {
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
   }
 
-
   return (
     <>
       <Sidebar
@@ -201,7 +200,7 @@ export function SidebarRight({ ...props }) {
         className="sticky top-0 hidden h-svh border-l lg:flex w-[350px]"
         {...props}
       >
-        <SidebarHeader className="border-sidebar-border h-16 border-b">
+        <SidebarHeader className="border-sidebar-border h-14 border-b">
           <NavUser user={data.user} />
         </SidebarHeader>
         
@@ -220,9 +219,8 @@ export function SidebarRight({ ...props }) {
               </TabsList>
             </div>
 
-
             {/* Documents Tab */}
-            <TabsContent value="documents" className="mt-0 space-y-4">
+            <TabsContent value="documents" className="mt-0 space-y-4 pt-4">
               <SidebarGroup>
                 <SidebarGroupLabel>Add Sources</SidebarGroupLabel>
                 <SidebarGroupContent className="px-4 space-y-4">
@@ -249,7 +247,6 @@ export function SidebarRight({ ...props }) {
                   </div>
                 </SidebarGroupContent>
               </SidebarGroup>
-
 
               {stagedFiles.length > 0 && (
                 <>
@@ -316,7 +313,6 @@ export function SidebarRight({ ...props }) {
                 </>
               )}
 
-
               <SidebarSeparator className="mx-0" />
               <SidebarGroup>
                 <SidebarGroupLabel>
@@ -339,11 +335,11 @@ export function SidebarRight({ ...props }) {
                       {uploadedSources.map((file) => (
                         <div
                           key={file.id}
-                          className="flex items-center justify-between bg-green-50 dark:bg-green-950/20 p-2 rounded-md border border-green-200 dark:border-green-900 cursor-pointer hover:bg-green-100 dark:hover:bg-green-950/30 transition"
+                          className="flex items-center justify-between bg-primary/5 p-2 rounded-md border border-primary/20 cursor-pointer hover:bg-primary/10 transition"
                           onClick={() => handleViewFile(file)}
                         >
                           <div className="flex-1 min-w-0 flex items-center gap-2">
-                            <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+                            <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
                             <div className="flex-1 min-w-0">
                               <p className="text-sm truncate font-medium">{file.name}</p>
                               <p className="text-xs text-muted-foreground">
@@ -386,8 +382,7 @@ export function SidebarRight({ ...props }) {
               </SidebarGroup>
             </TabsContent>
 
-
-            {/* Settings Tab - DISABLED */}
+            {/* Settings Tab - Disabled */}
             <TabsContent value="settings" className="mt-0 space-y-4">
               {/* Development Notice Banner */}
               <div className="px-4 pt-4">
@@ -498,12 +493,12 @@ export function SidebarRight({ ...props }) {
           </Tabs>
         </SidebarContent>
 
-        <SidebarFooter className="p-4 border-t">
+        <SidebarFooter className="p-4.5 border-t border-sidebar-border">
           <Button 
             variant="outline" 
-            className="w-full cursor-not-allowed" 
+            className="w-full" 
             size="sm"
-            disabled
+            onClick={handleApplySettings}
           >
             Apply Settings
           </Button>
